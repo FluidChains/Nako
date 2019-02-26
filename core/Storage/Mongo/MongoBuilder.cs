@@ -12,13 +12,11 @@ namespace Nako.Storage.Mongo
 {
     #region Using Directives
 
-    using System.Threading.Tasks;
-
     using MongoDB.Driver;
-
     using Nako.Config;
     using Nako.Storage.Mongo.Types;
     using Nako.Sync.SyncTasks;
+    using System.Threading.Tasks;
 
     #endregion
 
@@ -81,6 +79,15 @@ namespace Nako.Storage.Mongo
                         cm.AutoMap();
                         cm.MapIdMember(c => c.TransactionId);
                     });
+            }
+
+            if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(MapTransactionDetail)))
+            {
+                MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<MapTransactionDetail>(cm =>
+                {
+                    cm.AutoMap();
+                    cm.MapIdMember(c => c.TransactionId);
+                });
             }
 
             // indexes

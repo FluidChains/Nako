@@ -25,7 +25,7 @@ namespace Nako.Storage.Types
 
         public string Mint { get; set; }
 
-        public long BlockTime { get; set; }
+        public long Time { get; set; }
 
         public long Nonce { get; set; }
 

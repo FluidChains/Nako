@@ -7,16 +7,15 @@
 //   //  OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using Nako.Client.Types;
+using System.Collections.Generic;
+
 namespace Nako.Storage.Mongo.Types
 {
     public class MapTransactionBlock
     {
-        #region Public Properties
-
         public long BlockIndex { get; set; }
 
         public string TransactionId { get; set; }
-
-        #endregion
     }
 }

@@ -12,13 +12,7 @@ namespace Nako.Storage.Mongo
 {
     #region Using Directives
 
-    using System;
-    using System.Collections.Concurrent;
-    using System.Collections.Generic;
-    using System.Linq;
-
     using MongoDB.Driver;
-
     using Nako.Client;
     using Nako.Client.Types;
     using Nako.Config;
@@ -26,6 +20,10 @@ namespace Nako.Storage.Mongo
     using Nako.Operations.Types;
     using Nako.Storage.Mongo.Types;
     using Nako.Storage.Types;
+    using System;
+    using System.Collections.Concurrent;
+    using System.Collections.Generic;
+    using System.Linq;
 
     #endregion
 
@@ -72,6 +70,14 @@ namespace Nako.Storage.Mongo
             get
             {
                 return this.mongoDatabase.GetCollection<MapBlock>("MapBlock");
+            }
+        }
+
+        public IMongoCollection<MapTransactionDetail> MapTransactionDetails
+        {
+            get
+            {
+                return this.mongoDatabase.GetCollection<MapTransactionDetail>("MapTransactionDetails");
             }
         }
 
@@ -150,7 +156,7 @@ namespace Nako.Storage.Mongo
             {
                 BlockIndex = trx.BlockIndex,
                 BlockHash = blk.Hash,
-                Timestamp = blk.BlockTime,
+                Timestamp = blk.Time,
                 TransactionHash = trx.TransactionId,
                 Confirmations = current.Height - trx.BlockIndex
             };
@@ -168,7 +174,7 @@ namespace Nako.Storage.Mongo
             {
                 BlockIndex = s.BlockIndex,
                 BlockHash = blk.Hash,
-                Timestamp = blk.BlockTime,
+                Timestamp = blk.Time,
                 TransactionHash = s.TransactionId,
                 Confirmations = current.Height - s.BlockIndex
             });
@@ -186,7 +192,7 @@ namespace Nako.Storage.Mongo
             {
                 BlockIndex = s.BlockIndex,
                 BlockHash = blk.Hash,
-                Timestamp = blk.BlockTime,
+                Timestamp = blk.Time,
                 TransactionHash = s.TransactionId,
                 Confirmations = current.Height - s.BlockIndex
             });
@@ -199,14 +205,28 @@ namespace Nako.Storage.Mongo
 
         public SyncTransactionItems TransactionItemsGet(string transactionId)
         {
-            var client = CryptoClientFactory.Create(this.syncConnection.ServerDomain, this.syncConnection.RpcAccessPort, this.syncConnection.User, this.syncConnection.Password, this.syncConnection.Secure);
+            var filter = Builders<MapTransactionDetail>.Filter.Eq(td => td.TransactionId, transactionId);
+            var txDetail = this.MapTransactionDetails.Find(filter).FirstOrDefault();
 
-            var res = client.GetRawTransactionAsync(transactionId, 1).Result;
+            if (txDetail == null)
+                return null;
 
             return new SyncTransactionItems
             {
-                Inputs = res.VIn.Select(v => new SyncTransactionItemInput { PreviousTransactionHash = v.TxId, PreviousIndex = v.VOut, InputCoinBase = v.CoinBase }).ToList(),
-                Outputs = res.VOut.Where(v => v.ScriptPubKey != null && v.ScriptPubKey.Addresses != null).Select(v => new SyncTransactionItemOutput { Address = v.ScriptPubKey.Addresses.FirstOrDefault(), Index = v.N, Value = v.Value, OutputType = v.ScriptPubKey.Type }).ToList()
+                Inputs = txDetail.VIn.Select(v => new SyncTransactionItemInput
+                {
+                    PreviousTransactionHash = v.TxId,
+                    PreviousIndex = v.VOut,
+                    InputCoinBase = v.CoinBase
+                }).ToList(),
+                Outputs = txDetail.VOut.Where(v => v.ScriptPubKey != null && v.ScriptPubKey.Addresses != null)
+                    .Select(v => new SyncTransactionItemOutput
+                    {
+                        Address = v.ScriptPubKey.Addresses.FirstOrDefault(),
+                        Index = v.N,
+                        Value = v.Value,
+                        OutputType = v.ScriptPubKey.Type
+                    }).ToList()
             };
         }
 
@@ -274,7 +294,7 @@ namespace Nako.Storage.Mongo
                 Height = block.Height,
                 Size = block.Size,
                 Hash = block.Hash,
-                BlockTime = block.Time,
+                Time = block.Time,
                 NextBlockHash = block.NextBlockHash,
                 PreviousBlockHash = block.PreviousBlockHash,
                 TransactionCount = block.TransactionCount,
@@ -367,8 +387,8 @@ namespace Nako.Storage.Mongo
                 }
 
                 // add all pool transactions to main output
-                var paddr = this.PoolToMapTransactionAddress(pool, address).ToList();
-                addrs = addrs.Concat(paddr).ToList();
+                var paddr = this.PoolToMapTransactionAddress(pool, address);
+                addrs.Concat(paddr);
             }
 
             // map to return type and calculate confirmations

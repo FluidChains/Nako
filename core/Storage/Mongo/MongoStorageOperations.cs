@@ -12,12 +12,7 @@ namespace Nako.Storage.Mongo
 {
     #region Using Directives
 
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-
     using MongoDB.Driver;
-
     using Nako.Client.Types;
     using Nako.Config;
     using Nako.Extensions;
@@ -26,6 +21,9 @@ namespace Nako.Storage.Mongo
     using Nako.Storage.Mongo.Types;
     using Nako.Storage.Types;
     using Nako.Sync;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
 
     #endregion
 
@@ -117,9 +115,21 @@ namespace Nako.Storage.Mongo
                     {
                         if (item.BlockInfo != null)
                         {
-                            var inserts = items.Select(s => new MapTransactionBlock { BlockIndex = item.BlockInfo.Height, TransactionId = s.TxId }).ToList();
+                            var inserts = items.Select(s => new MapTransactionBlock
+                            {
+                                BlockIndex = item.BlockInfo.Height,
+                                TransactionId = s.TxId,
+                            }).ToList();
                             stats.Transactions += inserts.Count();
                             this.data.MapTransactionBlock.InsertMany(inserts, new InsertManyOptions { IsOrdered = false });
+
+                            var insertDetails = items.Select(s => new MapTransactionDetail
+                            {
+                                TransactionId = s.TxId,
+                                VIn = s.VIn,
+                                VOut = s.VOut
+                            });
+                            this.data.MapTransactionDetails.InsertMany(insertDetails, new InsertManyOptions { IsOrdered = false });
                         }
                     }
                     catch (MongoBulkWriteException mbwex)
@@ -186,7 +196,7 @@ namespace Nako.Storage.Mongo
 
             return stats;
         }
-        
+
         #endregion
 
         private void CompleteBlock(BlockInfo block)
@@ -198,9 +208,9 @@ namespace Nako.Storage.Mongo
         {
             var blockInfo = new MapBlock
             {
-                Height = block.Height, 
-                Hash = block.Hash, 
-                Size = block.Size, 
+                Height = block.Height,
+                Hash = block.Hash,
+                Size = block.Size,
                 Time = block.Time,
                 Bits = block.Bits,
                 Confirmations = block.Confirmations,
@@ -211,9 +221,9 @@ namespace Nako.Storage.Mongo
                 Nonce = block.Nonce,
                 ProofHash = block.ProofHash,
                 Version = block.Version,
-                NextBlockHash = block.NextBlockHash, 
-                PreviousBlockHash = block.PreviousBlockHash, 
-                TransactionCount = block.Transactions.Count(), 
+                NextBlockHash = block.NextBlockHash,
+                PreviousBlockHash = block.PreviousBlockHash,
+                TransactionCount = block.Transactions.Count(),
                 SyncComplete = false
             };
 
@@ -252,7 +262,7 @@ namespace Nako.Storage.Mongo
         {
             var trxInfps = transactions.Select(trx => new SyncTransactionInfo
             {
-                TransactionHash = trx.TxId, 
+                TransactionHash = trx.TxId,
                 Timestamp = block == null ? UnixUtils.DateToUnixTimestamp(DateTime.UtcNow) : block.Time
             });
 
@@ -273,13 +283,13 @@ namespace Nako.Storage.Mongo
                                                  && output.ScriptPubKey.Addresses.Any()
                                          select new MapTransactionAddress
                                          {
-                                             Id = string.Format("{0}-{1}", rawTransaction.TxId, output.N), 
-                                             TransactionId = rawTransaction.TxId, 
-                                             Value = Convert.ToDouble(output.Value), 
-                                             Index = output.N, 
-                                             Addresses = output.ScriptPubKey.Addresses, 
-                                             ScriptHex = output.ScriptPubKey.Hex, 
-                                             BlockIndex = blockIndex, 
+                                             Id = string.Format("{0}-{1}", rawTransaction.TxId, output.N),
+                                             TransactionId = rawTransaction.TxId,
+                                             Value = Convert.ToDouble(output.Value),
+                                             Index = output.N,
+                                             Addresses = output.ScriptPubKey.Addresses,
+                                             ScriptHex = output.ScriptPubKey.Hex,
+                                             BlockIndex = blockIndex,
                                              CoinBase = coinBase
                                          };
 
@@ -300,8 +310,8 @@ namespace Nako.Storage.Mongo
                                         where input.TxId != null
                                         select new
                                         {
-                                            TransactionId = rawTransaction.TxId, 
-                                            InputTransactionId = input.TxId, 
+                                            TransactionId = rawTransaction.TxId,
+                                            InputTransactionId = input.TxId,
                                             InputIndex = input.VOut
                                         };
 

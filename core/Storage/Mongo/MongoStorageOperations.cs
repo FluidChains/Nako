@@ -63,7 +63,7 @@ namespace Nako.Storage.Mongo
 
                 if (lastBlock != null)
                 {
-                    if (lastBlock.BlockHash == item.BlockInfo.Hash)
+                    if (lastBlock.Hash == item.BlockInfo.Hash)
                     {
                         if (lastBlock.SyncComplete)
                         {
@@ -72,7 +72,7 @@ namespace Nako.Storage.Mongo
                     }
                     else
                     {
-                        if (item.BlockInfo.PreviousBlockHash != lastBlock.BlockHash)
+                        if (item.BlockInfo.PreviousBlockHash != lastBlock.Hash)
                         {
                             this.InvalidBlockFound(lastBlock, item);
                             return;
@@ -198,10 +198,19 @@ namespace Nako.Storage.Mongo
         {
             var blockInfo = new MapBlock
             {
-                BlockIndex = block.Height, 
-                BlockHash = block.Hash, 
-                BlockSize = block.Size, 
-                BlockTime = block.Time, 
+                Height = block.Height, 
+                Hash = block.Hash, 
+                Size = block.Size, 
+                Time = block.Time,
+                Bits = block.Bits,
+                Confirmations = block.Confirmations,
+                Difficulty = block.Difficulty,
+                Flags = block.Flags,
+                Merkleroot = block.Merkleroot,
+                Mint = block.Mint,
+                Nonce = block.Nonce,
+                ProofHash = block.ProofHash,
+                Version = block.Version,
                 NextBlockHash = block.NextBlockHash, 
                 PreviousBlockHash = block.PreviousBlockHash, 
                 TransactionCount = block.Transactions.Count(), 

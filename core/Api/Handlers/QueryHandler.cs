@@ -207,9 +207,9 @@ namespace Nako.Api.Handlers
                 return new QueryBlock
                 {
                     CoinTag = this.configuration.CoinTag, 
-                    BlockHash = block.BlockHash, 
-                    BlockIndex = block.BlockIndex, 
-                    BlockSize = block.BlockSize, 
+                    BlockHash = block.Hash, 
+                    BlockIndex = block.Height, 
+                    BlockSize = block.Size, 
                     BlockTime = block.BlockTime, 
                     NextBlockHash = block.NextBlockHash, 
                     PreviousBlockHash = block.PreviousBlockHash, 
@@ -219,14 +219,14 @@ namespace Nako.Api.Handlers
                 };
             }
 
-            var transactions = this.storage.BlockTransactionGetByBlockIndex(block.BlockIndex);
+            var transactions = this.storage.BlockTransactionGetByBlockIndex(block.Height);
 
             return new QueryBlock
             {
                 CoinTag = this.configuration.CoinTag, 
-                BlockHash = block.BlockHash, 
-                BlockIndex = block.BlockIndex, 
-                BlockSize = block.BlockSize, 
+                BlockHash = block.Hash, 
+                BlockIndex = block.Height, 
+                BlockSize = block.Size, 
                 BlockTime = block.BlockTime, 
                 NextBlockHash = block.NextBlockHash, 
                 PreviousBlockHash = block.PreviousBlockHash, 
@@ -250,9 +250,9 @@ namespace Nako.Api.Handlers
                 return new QueryBlock
                 {
                     CoinTag = this.configuration.CoinTag, 
-                    BlockHash = block.BlockHash, 
-                    BlockIndex = block.BlockIndex, 
-                    BlockSize = block.BlockSize, 
+                    BlockHash = block.Hash, 
+                    BlockIndex = block.Height, 
+                    BlockSize = block.Size, 
                     BlockTime = block.BlockTime, 
                     NextBlockHash = block.NextBlockHash, 
                     PreviousBlockHash = block.PreviousBlockHash, 
@@ -262,14 +262,14 @@ namespace Nako.Api.Handlers
                 };
             }
 
-            var transactions = this.storage.BlockTransactionGetByBlockIndex(block.BlockIndex);
+            var transactions = this.storage.BlockTransactionGetByBlockIndex(block.Height);
 
             return new QueryBlock
             {
                 CoinTag = this.configuration.CoinTag, 
-                BlockHash = block.BlockHash, 
-                BlockIndex = block.BlockIndex, 
-                BlockSize = block.BlockSize, 
+                BlockHash = block.Hash, 
+                BlockIndex = block.Height, 
+                BlockSize = block.Size, 
                 BlockTime = block.BlockTime, 
                 NextBlockHash = block.NextBlockHash, 
                 PreviousBlockHash = block.PreviousBlockHash, 
@@ -293,9 +293,9 @@ namespace Nako.Api.Handlers
                 return new QueryBlock
                 {
                     CoinTag = this.configuration.CoinTag, 
-                    BlockHash = block.BlockHash, 
-                    BlockIndex = block.BlockIndex, 
-                    BlockSize = block.BlockSize, 
+                    BlockHash = block.Hash, 
+                    BlockIndex = block.Height, 
+                    BlockSize = block.Size, 
                     BlockTime = block.BlockTime, 
                     NextBlockHash = block.NextBlockHash, 
                     PreviousBlockHash = block.PreviousBlockHash, 
@@ -305,14 +305,14 @@ namespace Nako.Api.Handlers
                 };
             }
 
-            var transactions = this.storage.BlockTransactionGetByBlockIndex(block.BlockIndex);
+            var transactions = this.storage.BlockTransactionGetByBlockIndex(block.Height);
 
             return new QueryBlock
             {
                 CoinTag = this.configuration.CoinTag, 
-                BlockHash = block.BlockHash, 
-                BlockIndex = block.BlockIndex, 
-                BlockSize = block.BlockSize, 
+                BlockHash = block.Hash, 
+                BlockIndex = block.Height, 
+                BlockSize = block.Size, 
                 BlockTime = block.BlockTime, 
                 NextBlockHash = block.NextBlockHash, 
                 PreviousBlockHash = block.PreviousBlockHash, 

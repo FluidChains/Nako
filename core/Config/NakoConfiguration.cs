@@ -37,6 +37,8 @@ namespace Nako.Config
 
         public long StartBlockIndex { get; set; }
 
+        public bool StartApi { get; set; }
+
         public bool SyncMemoryPool { get; set; }
 
         public string RpcUser { get; set; }

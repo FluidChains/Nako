@@ -81,15 +81,15 @@ namespace Nako.Sync
                 }
 
                 var client = CryptoClientFactory.Create(connection.ServerDomain, connection.RpcAccessPort, connection.User, connection.Password, connection.Secure);
-                var currentHash = await client.GetblockHashAsync(block.BlockIndex);
-                if (currentHash == block.BlockHash)
+                var currentHash = await client.GetblockHashAsync(block.Height);
+                if (currentHash == block.Hash)
                 {
                     break;
                 }
 
-                this.tracer.Trace("SyncOperations", string.Format("Deleting block {0}", block.BlockIndex));
+                this.tracer.Trace("SyncOperations", string.Format("Deleting block {0}", block.Height));
 
-                this.storage.DeleteBlock(block.BlockHash);
+                this.storage.DeleteBlock(block.Hash);
             }
         }
 
@@ -104,13 +104,19 @@ namespace Nako.Sync
                 // because inserting blocks is sequential we'll use the indexed 'height' filed to check if the last block is incomplete.
                 var incomplete = this.storage.BlockGetBlockCount(6).Where(b => !b.SyncComplete).ToList(); ////this.storage.BlockGetIncompleteBlocks().ToList();
 
-                var incompleteToSync = incomplete.OrderBy(o => o.BlockIndex).FirstOrDefault(f => !syncingBlocks.CurrentSyncing.ContainsKey(f.BlockHash));
+                var incompleteToSync = incomplete.OrderBy(o => o.Height)
+                    .FirstOrDefault(f => !syncingBlocks.CurrentSyncing.ContainsKey(f.Hash));
 
                 if (incompleteToSync != null)
                 {
-                    var incompleteBlock = client.GetBlock(incompleteToSync.BlockHash);
+                    var incompleteBlock = client.GetBlock(incompleteToSync.Hash);
 
-                    return new SyncBlockOperation { BlockInfo = incompleteBlock, IncompleteBlock = true, LastCryptoBlockIndex = lastCryptoBlockIndex };
+                    return new SyncBlockOperation
+                    {
+                        BlockInfo = incompleteBlock,
+                        IncompleteBlock = true,
+                        LastCryptoBlockIndex = lastCryptoBlockIndex
+                    };
                 }
 
                 string blockHashsToSync;
@@ -119,7 +125,7 @@ namespace Nako.Sync
 
                 if (blokcs.Any())
                 {
-                    var lastBlockIndex = blokcs.First().BlockIndex;
+                    var lastBlockIndex = blokcs.First().Height;
 
                     if (lastBlockIndex == lastCryptoBlockIndex)
                     {
@@ -171,7 +177,7 @@ namespace Nako.Sync
             {
                 syncingBlocks.CurrentSyncing.TryAdd(blockToSync.BlockInfo.Hash, blockToSync.BlockInfo);
             }
-           
+
             stoper.Stop();
 
             return blockToSync;

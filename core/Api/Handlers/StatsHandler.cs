@@ -62,7 +62,7 @@ namespace Nako.Api.Handlers
 
             stats.ClientInfo = await client.GetInfoAsync();
             stats.TransactionsInPool = this.storage.GetMemoryTransactions().Count();
-            stats.SyncBlockIndex = this.storage.BlockGetBlockCount(1).First().BlockIndex;
+            stats.SyncBlockIndex = this.storage.BlockGetBlockCount(1).First().Height;
             stats.Progress = $"{stats.SyncBlockIndex}/{stats.ClientInfo.Blocks} - {stats.ClientInfo.Blocks - stats.SyncBlockIndex}";
             return stats;
         }

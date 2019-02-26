@@ -87,8 +87,8 @@ namespace Nako.Storage.Mongo
 
         public IEnumerable<SyncBlockInfo> BlockGetBlockCount(int count)
         {
-            var filter = Builders<MapBlock>.Filter.Exists(info => info.BlockIndex);
-            var sort = Builders<MapBlock>.Sort.Descending(info => info.BlockIndex);
+            var filter = Builders<MapBlock>.Filter.Exists(info => info.Height);
+            var sort = Builders<MapBlock>.Sort.Descending(info => info.Height);
 
             return this.MapBlock.Find(filter).Sort(sort).Limit(count).ToList().Select(this.Convert);
         }
@@ -101,14 +101,14 @@ namespace Nako.Storage.Mongo
 
         public SyncBlockInfo BlockGetByIndex(long blockIndex)
         {
-            var filter = Builders<MapBlock>.Filter.Eq(info => info.BlockIndex, blockIndex);
+            var filter = Builders<MapBlock>.Filter.Eq(info => info.Height, blockIndex);
 
             return this.MapBlock.Find(filter).ToList().Select(this.Convert).FirstOrDefault();
         }
 
         public SyncBlockInfo BlockGetByHash(string blockHash)
         {
-            var filter = Builders<MapBlock>.Filter.Eq(info => info.BlockHash, blockHash);
+            var filter = Builders<MapBlock>.Filter.Eq(info => info.Hash, blockHash);
 
             return this.MapBlock.Find(filter).ToList().Select(this.Convert).FirstOrDefault();
         }
@@ -120,7 +120,7 @@ namespace Nako.Storage.Mongo
 
         public void CompleteBlock(string blockHash)
         {
-            var filter = Builders<MapBlock>.Filter.Eq(blockInfo => blockInfo.BlockHash, blockHash);
+            var filter = Builders<MapBlock>.Filter.Eq(blockInfo => blockInfo.Hash, blockHash);
             var update = Builders<MapBlock>.Update.Set(blockInfo => blockInfo.SyncComplete, true);
             this.MapBlock.UpdateOne(filter, update);
         }
@@ -145,14 +145,14 @@ namespace Nako.Storage.Mongo
             var current = this.BlockGetBlockCount(1).First();
 
             var blk = this.BlockGetByIndex(trx.BlockIndex);
-                
+
             return new SyncTransactionInfo
             {
-                BlockIndex = trx.BlockIndex, 
-                BlockHash = blk.BlockHash, 
-                Timestamp = blk.BlockTime, 
-                TransactionHash = trx.TransactionId, 
-                Confirmations = current.BlockIndex - trx.BlockIndex
+                BlockIndex = trx.BlockIndex,
+                BlockHash = blk.Hash,
+                Timestamp = blk.BlockTime,
+                TransactionHash = trx.TransactionId,
+                Confirmations = current.Height - trx.BlockIndex
             };
         }
 
@@ -161,17 +161,17 @@ namespace Nako.Storage.Mongo
             var blk = this.BlockGetByHash(blockHash);
             var current = this.BlockGetBlockCount(1).First();
 
-            var filter = Builders<MapTransactionBlock>.Filter.Eq(info => info.BlockIndex, blk.BlockIndex);
+            var filter = Builders<MapTransactionBlock>.Filter.Eq(info => info.BlockIndex, blk.Height);
             var trxs = this.MapTransactionBlock.Find(filter).ToList();
 
             return trxs.Select(s => new SyncTransactionInfo
-                                        {
-                                            BlockIndex = s.BlockIndex, 
-                                            BlockHash = blk.BlockHash, 
-                                            Timestamp = blk.BlockTime, 
-                                            TransactionHash = s.TransactionId, 
-                                            Confirmations = current.BlockIndex - s.BlockIndex
-                                        });
+            {
+                BlockIndex = s.BlockIndex,
+                BlockHash = blk.Hash,
+                Timestamp = blk.BlockTime,
+                TransactionHash = s.TransactionId,
+                Confirmations = current.Height - s.BlockIndex
+            });
         }
 
         public IEnumerable<SyncTransactionInfo> BlockTransactionGetByBlockIndex(long blockIndex)
@@ -179,16 +179,16 @@ namespace Nako.Storage.Mongo
             var blk = this.BlockGetByIndex(blockIndex);
             var current = this.BlockGetBlockCount(1).First();
 
-            var filter = Builders<MapTransactionBlock>.Filter.Eq(info => info.BlockIndex, blk.BlockIndex);
+            var filter = Builders<MapTransactionBlock>.Filter.Eq(info => info.BlockIndex, blk.Height);
             var trxs = this.MapTransactionBlock.Find(filter).ToList();
 
             return trxs.Select(s => new SyncTransactionInfo
             {
-                BlockIndex = s.BlockIndex, 
-                BlockHash = blk.BlockHash, 
-                Timestamp = blk.BlockTime, 
-                TransactionHash = s.TransactionId, 
-                Confirmations = current.BlockIndex - s.BlockIndex
+                BlockIndex = s.BlockIndex,
+                BlockHash = blk.Hash,
+                Timestamp = blk.BlockTime,
+                TransactionHash = s.TransactionId,
+                Confirmations = current.Height - s.BlockIndex
             });
         }
 
@@ -204,10 +204,10 @@ namespace Nako.Storage.Mongo
             var res = client.GetRawTransactionAsync(transactionId, 1).Result;
 
             return new SyncTransactionItems
-                       {
-                           Inputs = res.VIn.Select(v => new SyncTransactionItemInput{ PreviousTransactionHash = v.TxId, PreviousIndex = v.VOut, InputCoinBase = v.CoinBase}).ToList(), 
-                           Outputs = res.VOut.Where(v => v.ScriptPubKey != null && v.ScriptPubKey.Addresses != null).Select(v=> new SyncTransactionItemOutput { Address = v.ScriptPubKey.Addresses.FirstOrDefault(), Index = v.N, Value = v.Value, OutputType = v.ScriptPubKey.Type }).ToList()
-                       };
+            {
+                Inputs = res.VIn.Select(v => new SyncTransactionItemInput { PreviousTransactionHash = v.TxId, PreviousIndex = v.VOut, InputCoinBase = v.CoinBase }).ToList(),
+                Outputs = res.VOut.Where(v => v.ScriptPubKey != null && v.ScriptPubKey.Addresses != null).Select(v => new SyncTransactionItemOutput { Address = v.ScriptPubKey.Addresses.FirstOrDefault(), Index = v.N, Value = v.Value, OutputType = v.ScriptPubKey.Type }).ToList()
+            };
         }
 
         public SyncTransactionAddressBalance AddressGetBalance(string address, long confirmations)
@@ -231,15 +231,15 @@ namespace Nako.Storage.Mongo
             var block = this.BlockGetByHash(blockHash);
 
             // delete the outputs
-            var addrFilter = Builders<MapTransactionAddress>.Filter.Eq(addr => addr.BlockIndex, block.BlockIndex);
+            var addrFilter = Builders<MapTransactionAddress>.Filter.Eq(addr => addr.BlockIndex, block.Height);
             this.MapTransactionAddress.DeleteMany(addrFilter);
 
             // delete the transaction
-            var transactionFilter = Builders<MapTransactionBlock>.Filter.Eq(info => info.BlockIndex, block.BlockIndex);
+            var transactionFilter = Builders<MapTransactionBlock>.Filter.Eq(info => info.BlockIndex, block.Height);
             this.MapTransactionBlock.DeleteMany(transactionFilter);
 
             // delete the block itself.
-            var blockFilter = Builders<MapBlock>.Filter.Eq(info => info.BlockHash, blockHash);
+            var blockFilter = Builders<MapBlock>.Filter.Eq(info => info.Hash, blockHash);
             this.MapBlock.DeleteOne(blockFilter);
         }
 
@@ -258,18 +258,28 @@ namespace Nako.Storage.Mongo
             var available = all - used;
 
             return new SyncTransactionAddressBalance
-                       {
-                           Available = available, 
-                           Received = availableOnly ? default(decimal?) : all, 
-                           Sent = availableOnly ? default(decimal?) : used, 
-                           Unconfirmed = confirming, 
-                           Items = addrs
-                       };
+            {
+                Available = available,
+                Received = availableOnly ? default(decimal?) : all,
+                Sent = availableOnly ? default(decimal?) : used,
+                Unconfirmed = confirming,
+                Items = addrs
+            };
         }
 
         private SyncBlockInfo Convert(MapBlock block)
         {
-            return new SyncBlockInfo { BlockIndex = block.BlockIndex, BlockSize = block.BlockSize, BlockHash = block.BlockHash, BlockTime = block.BlockTime, NextBlockHash = block.NextBlockHash, PreviousBlockHash = block.PreviousBlockHash, TransactionCount = block.TransactionCount, SyncComplete = block.SyncComplete };
+            return new SyncBlockInfo
+            {
+                Height = block.Height,
+                Size = block.Size,
+                Hash = block.Hash,
+                BlockTime = block.Time,
+                NextBlockHash = block.NextBlockHash,
+                PreviousBlockHash = block.PreviousBlockHash,
+                TransactionCount = block.TransactionCount,
+                SyncComplete = block.SyncComplete
+            };
         }
 
         private IEnumerable<SyncTransactionAddressItem> SelectAddressWithPool(SyncBlockInfo current, string address, bool availableOnly)
@@ -279,7 +289,7 @@ namespace Nako.Storage.Mongo
             // is to just fetch the entire history,  this could be limited to the available balance only.
 
             ////var confirmations = 3;
-  
+
             //// var res = this.MapTransactionAddress.Aggregate()
             ////    .Match(new BsonDocument
             ////        {
@@ -292,7 +302,7 @@ namespace Nako.Storage.Mongo
             ////            new BsonElement("confirmed", new BsonDocument(new BsonElement("$lte", new BsonArray(new[] {"$BlockIndex", (object)(current.BlockIndex - confirmations + 1)})))),
             ////            new BsonElement("val", new BsonString("$Value")),
             ////            new BsonElement("spent", new BsonDocument(new BsonElement("$ne", new BsonArray(new[] {"$SpendingTransactionId", (object)BsonNull.Value})))),
-									
+
             ////        })
             ////    .Group(new BsonDocument
             ////        {
@@ -315,7 +325,7 @@ namespace Nako.Storage.Mongo
             ////    Sent = System.Convert.ToDecimal(sent.ToString("#0.########")),
             ////    Unconfirmed = System.Convert.ToDecimal(uncinfirmed.ToString("#0.########")),
             ////};
-            
+
             var builder = Builders<MapTransactionAddress>.Filter;
             var filter = builder.Eq(info => info.Addresses, new List<string> { address });
 
@@ -342,12 +352,12 @@ namespace Nako.Storage.Mongo
                 var addrsupdate = addrs;
                 this.GetPoolOutputs(pool).ForEach(f =>
                 {
-                        var adr = addrsupdate.FirstOrDefault(a => a.TransactionId == f.Item1.TxId && a.Index == f.Item1.VOut);
-                        if (adr != null)
-                        {
-                            adr.SpendingTransactionId = f.Item2;
-                        }
-                    });
+                    var adr = addrsupdate.FirstOrDefault(a => a.TransactionId == f.Item1.TxId && a.Index == f.Item1.VOut);
+                    if (adr != null)
+                    {
+                        adr.SpendingTransactionId = f.Item2;
+                    }
+                });
 
                 // if only spendable transactions are to be returned we need to remove 
                 // any that have been marked as spent by a transaction in the pool
@@ -364,14 +374,14 @@ namespace Nako.Storage.Mongo
             // map to return type and calculate confirmations
             return addrs.Select(s => new SyncTransactionAddressItem
             {
-                Address = address, 
-                Index = s.Index, 
-                TransactionHash = !s.CoinBase ? s.TransactionId : string.Empty, 
-                BlockIndex = s.BlockIndex == -1 ? default(long?) : s.BlockIndex, 
-                Value = System.Convert.ToDecimal(s.Value), 
-                Confirmations = s.BlockIndex == -1 ? 0 : current.BlockIndex - s.BlockIndex + 1, 
-                SpendingTransactionHash = s.SpendingTransactionId, 
-                CoinBase = s.CoinBase ? s.TransactionId : string.Empty, 
+                Address = address,
+                Index = s.Index,
+                TransactionHash = !s.CoinBase ? s.TransactionId : string.Empty,
+                BlockIndex = s.BlockIndex == -1 ? default(long?) : s.BlockIndex,
+                Value = System.Convert.ToDecimal(s.Value),
+                Confirmations = s.BlockIndex == -1 ? 0 : current.Height - s.BlockIndex + 1,
+                SpendingTransactionHash = s.SpendingTransactionId,
+                CoinBase = s.CoinBase ? s.TransactionId : string.Empty,
                 ScriptHex = s.ScriptHex
             });
         }
@@ -396,12 +406,12 @@ namespace Nako.Storage.Mongo
                                                  && output.ScriptPubKey.Addresses.Contains(address)
                                          select new MapTransactionAddress
                                          {
-                                             Id = string.Format("{0}-{1}", rawTransaction.TxId, output.N), 
-                                             TransactionId = rawTransaction.TxId, 
-                                             Value = System.Convert.ToDouble(output.Value), 
-                                             Index = output.N, 
-                                             Addresses = output.ScriptPubKey.Addresses, 
-                                             BlockIndex = -1, 
+                                             Id = string.Format("{0}-{1}", rawTransaction.TxId, output.N),
+                                             TransactionId = rawTransaction.TxId,
+                                             Value = System.Convert.ToDouble(output.Value),
+                                             Index = output.N,
+                                             Addresses = output.ScriptPubKey.Addresses,
+                                             BlockIndex = -1,
                                              CoinBase = coinBase
                                          };
 

@@ -1,18 +1,19 @@
 ﻿{
-  "CoinTag": "==CoinTag==",
+  "CoinTag": "civx",
 
-  "ConnectionString": "mongodb://{CoinTag}-mongo",
+  "ConnectionString": "mongodb://127.0.0.1:27017",
 
-  "RpcAccessPort": 5000,
+  "RpcAccessPort": 4561,
   "RpcSecure": false,
-  "RpcDomain": "{CoinTag}-client",
-  "RpcUser": "rpcuser",
-  "RpcPassword": "rpcpassword",
+  "RpcDomain": "127.0.0.1",
+  "RpcUser": "u",
+  "RpcPassword": "p",
 
   "SyncApiPort": 9000,
   "SyncBlockchain": true,
   "SyncMemoryPool": true,
   "StartBlockIndex": 1,
+  "StartApi": false,
 
   "NotifyUrl": "https://apiurl",
   "NotifyBatchCount": 0,

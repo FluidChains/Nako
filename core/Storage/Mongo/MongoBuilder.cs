@@ -61,7 +61,7 @@ namespace Nako.Storage.Mongo
                 MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<MapBlock>(cm =>
                     {
                         cm.AutoMap();
-                        cm.MapIdMember(c => c.BlockHash);
+                        cm.MapIdMember(c => c.Hash);
                     });
             }
 
@@ -86,7 +86,7 @@ namespace Nako.Storage.Mongo
             // indexes
             this.tracer.Trace("MongoBuilder", "Creating indexes");
 
-            var blkIndex = Builders<MapBlock>.IndexKeys.Ascending(blk => blk.BlockIndex);
+            var blkIndex = Builders<MapBlock>.IndexKeys.Ascending(blk => blk.Height);
             this.mongoData.MapBlock.Indexes.CreateOne(blkIndex);
 
             var addrIndex = Builders<MapTransactionAddress>.IndexKeys.Ascending(addr => addr.Addresses);

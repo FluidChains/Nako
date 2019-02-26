@@ -70,6 +70,12 @@ namespace Nako.Api
         {
             this.application.CreateApiToken();
 
+            if (!this.configuration.StartApi)
+            {
+                this.tracer.Trace("API", "No api server");
+                return Task.FromResult(false);
+            }            
+
             return Task.Run(
                 () =>
                 {

@@ -12,56 +12,60 @@ namespace Nako.Client.Types
 {
     #region Using Directives
 
-    using System.Collections.Generic;
-
     using Newtonsoft.Json;
+    using System.Collections.Generic;
 
     #endregion
 
     public class BlockInfo
     {
-        #region Public Properties
-
-        [JsonProperty("bits")]
-        public string Bits { get; set; }
+        [JsonProperty("hash")]
+        public string Hash { get; set; }
 
         [JsonProperty("confirmations")]
         public long Confirmations { get; set; }
 
-        //[JsonProperty("difficulty")]
-        //public string Difficulty { get; set; }
-
-        [JsonProperty("hash")]
-        public string Hash { get; set; }
+        [JsonProperty("size")]
+        public long Size { get; set; }
 
         [JsonProperty("height")]
         public long Height { get; set; }
 
+        [JsonProperty("version")]
+        public long Version { get; set; }
+
         [JsonProperty("merkleroot")]
         public string Merkleroot { get; set; }
 
-        [JsonProperty("nextblockhash")]
-        public string NextBlockHash { get; set; }
-
-        [JsonProperty("nonce")]
-        public long Nonce { get; set; }
-
-        [JsonProperty("previousblockhash")]
-        public string PreviousBlockHash { get; set; }
-
-        [JsonProperty("size")]
-        public long Size { get; set; }
+        [JsonProperty("mint")]
+        public string Mint { get; set; }
 
         [JsonProperty("time")]
         [JsonConverter(typeof(JsonUnixTimeConverter))]
         public long Time { get; set; }
 
+        [JsonProperty("nonce")]
+        public long Nonce { get; set; }
+
+        [JsonProperty("bits")]
+        public string Bits { get; set; }        
+
+        [JsonProperty("difficulty")]
+        public decimal Difficulty { get; set; }
+
+        [JsonProperty("previousblockhash")]
+        public string PreviousBlockHash { get; set; }
+
+        [JsonProperty("nextblockhash")]
+        public string NextBlockHash { get; set; }
+
+        [JsonProperty("flags")]
+        public string Flags { get; set; }
+
+        [JsonProperty("proofhash")]
+        public string ProofHash { get; set; }
+
         [JsonProperty("tx")]
-        public IEnumerable<string> Transactions { get; set; }
-
-        [JsonProperty("version")]
-        public long Version { get; set; }
-
-        #endregion
+        public IEnumerable<string> Transactions { get; set; }        
     }
 }

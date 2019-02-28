@@ -10,9 +10,11 @@
 
 namespace Nako.Storage.Mongo
 {
+    using core.Storage.Types;
     #region Using Directives
 
     using MongoDB.Driver;
+    using Nako.Client;
     using Nako.Client.Types;
     using Nako.Config;
     using Nako.Extensions;
@@ -40,15 +42,22 @@ namespace Nako.Storage.Mongo
 
         private readonly MongoData data;
 
+        private readonly SyncConnection syncConnection;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="MongoStorageOperations"/> class.
         /// </summary>
-        public MongoStorageOperations(IStorage storage, MongoData mongoData, Tracer tracer, NakoConfiguration nakoConfiguration)
+        public MongoStorageOperations(IStorage storage,
+            MongoData mongoData,
+            Tracer tracer,
+            NakoConfiguration nakoConfiguration,
+            SyncConnection syncConnection)
         {
             this.data = mongoData;
             this.configuration = nakoConfiguration;
             this.tracer = tracer;
             this.storage = storage;
+            this.syncConnection = syncConnection;
         }
 
         #region Public Methods and Operators
@@ -109,26 +118,65 @@ namespace Nako.Storage.Mongo
                 var queue = new Queue<DecodedRawTransaction>(item.Transactions);
                 do
                 {
-                    var items = this.GetBatch(this.configuration.MongoBatchSize, queue).ToList();
-
+                    var transactions = this.GetBatch(this.configuration.MongoBatchSize, queue).ToList();
+                    var bitcoinClient = CryptoClientFactory.Create(
+                                        syncConnection.ServerDomain,
+                                        syncConnection.RpcAccessPort,
+                                        syncConnection.User,
+                                        syncConnection.Password,
+                                        syncConnection.Secure);
                     try
                     {
                         if (item.BlockInfo != null)
                         {
-                            var inserts = items.Select(s => new MapTransactionBlock
+                            var inserts = new List<MapTransactionBlock>();
+                            var insertDetails = new List<MapTransactionDetail>();
+                            foreach (var tx in transactions)
                             {
-                                BlockIndex = item.BlockInfo.Height,
-                                TransactionId = s.TxId,
-                            }).ToList();
+                                var isCoinBase = !string.IsNullOrWhiteSpace(tx.VIn.First().CoinBase);
+                                var syncVin = tx.VIn.Select(vin =>
+                                {
+                                    var previousTransaction = isCoinBase ?
+                                        null : bitcoinClient.GetRawTransaction(vin.TxId, 1);
+
+                                    return new SyncVin
+                                    {
+                                        TxId = vin.TxId,
+                                        CoinBase = vin.CoinBase,
+                                        IsCoinBase = !string.IsNullOrWhiteSpace(vin.CoinBase),
+                                        ScriptSig = vin.ScriptSig,
+                                        Sequence = vin.Sequence,
+                                        VOut = vin.VOut,
+                                        PreviousVout = previousTransaction?.VOut.First(o => o.N == vin.VOut)
+                                    };
+                                }).ToList();
+                                var totalVout = tx.VOut.Sum(o => o.Value);
+                                var totalVin = syncVin.Sum(i => i.PreviousVout?.Value);
+
+                                inserts.Add(new MapTransactionBlock
+                                {
+                                    BlockIndex = item.BlockInfo.Height,
+                                    TransactionId = tx.TxId,
+                                    TotalVout = totalVout,
+                                    TotalVin = totalVin,
+                                    Time = tx.Time,
+                                    BlockHash = tx.BlockHash,
+                                    BlockTime = tx.BlockTime,
+                                    Locktime = tx.Locktime,
+                                    Version = tx.Version,
+                                    IsCoinBase = isCoinBase
+                                });
+
+                                insertDetails.Add(new MapTransactionDetail
+                                {
+                                    TransactionId = tx.TxId,
+                                    Vin = syncVin,
+                                    Vout = tx.VOut
+                                });
+                            }
+
                             stats.Transactions += inserts.Count();
                             this.data.MapTransactionBlock.InsertMany(inserts, new InsertManyOptions { IsOrdered = false });
-
-                            var insertDetails = items.Select(s => new MapTransactionDetail
-                            {
-                                TransactionId = s.TxId,
-                                VIn = s.VIn,
-                                VOut = s.VOut
-                            });
                             this.data.MapTransactionDetails.InsertMany(insertDetails, new InsertManyOptions { IsOrdered = false });
                         }
                     }
@@ -141,7 +189,7 @@ namespace Nako.Storage.Mongo
                     }
 
                     // insert inputs and add to the list for later to use on the notification task.
-                    var inputs = this.CreateInputs(item.BlockInfo.Height, items).ToList();
+                    var inputs = this.CreateInputs(item.BlockInfo.Height, transactions).ToList();
                     var queueInner = new Queue<MapTransactionAddress>(inputs);
                     do
                     {
@@ -166,7 +214,7 @@ namespace Nako.Storage.Mongo
                     while (queueInner.Any());
 
                     // insert outputs
-                    var outputs = this.CreateOutputs(items).ToList();
+                    var outputs = this.CreateOutputs(transactions).ToList();
                     stats.Outputs += outputs.Count();
                     outputs.ForEach(outp => this.data.MarkOutput(outp.InputTransactionId, outp.InputIndex, outp.TransactionId));
                 }

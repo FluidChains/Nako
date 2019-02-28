@@ -13,7 +13,6 @@ namespace Nako.Storage.Mongo
     #region Using Directives
 
     using MongoDB.Driver;
-    using Nako.Client;
     using Nako.Client.Types;
     using Nako.Config;
     using Nako.Extensions;
@@ -213,13 +212,14 @@ namespace Nako.Storage.Mongo
 
             return new SyncTransactionItems
             {
-                Inputs = txDetail.VIn.Select(v => new SyncTransactionItemInput
+                Inputs = txDetail.Vin.Select(v => new SyncTransactionItemInput
                 {
                     PreviousTransactionHash = v.TxId,
                     PreviousIndex = v.VOut,
                     InputCoinBase = v.CoinBase
                 }).ToList(),
-                Outputs = txDetail.VOut.Where(v => v.ScriptPubKey != null && v.ScriptPubKey.Addresses != null)
+
+                Outputs = txDetail.Vout.Where(v => v.ScriptPubKey != null && v.ScriptPubKey.Addresses != null)
                     .Select(v => new SyncTransactionItemOutput
                     {
                         Address = v.ScriptPubKey.Addresses.FirstOrDefault(),

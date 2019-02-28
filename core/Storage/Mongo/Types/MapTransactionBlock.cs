@@ -7,15 +7,20 @@
 //   //  OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
-using Nako.Client.Types;
-using System.Collections.Generic;
 
 namespace Nako.Storage.Mongo.Types
 {
     public class MapTransactionBlock
     {
         public long BlockIndex { get; set; }
-
         public string TransactionId { get; set; }
+        public decimal TotalVout { get; set; }
+        public decimal? TotalVin { get; set; }
+        public string BlockHash { get; set; }
+        public string BlockTime { get; set; }
+        public int Version { get; set; }
+        public long Time { get; set; }
+        public long Locktime { get; set; }
+        public bool IsCoinBase { get; set; }
     }
 }

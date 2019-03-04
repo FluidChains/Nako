@@ -17,8 +17,6 @@ namespace Nako.Storage.Mongo.Types
 
     public class MapTransactionAddress
     {
-        #region Public Properties
-
         public string Id { get; set; }
 
         public int Index { get; set; }
@@ -37,6 +35,6 @@ namespace Nako.Storage.Mongo.Types
 
         public bool CoinBase { get; set; }
 
-        #endregion
+        public long Time { get; set; }
     }
 }

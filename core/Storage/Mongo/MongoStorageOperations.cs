@@ -338,7 +338,8 @@ namespace Nako.Storage.Mongo
                                              Addresses = output.ScriptPubKey.Addresses,
                                              ScriptHex = output.ScriptPubKey.Hex,
                                              BlockIndex = blockIndex,
-                                             CoinBase = coinBase
+                                             CoinBase = coinBase,
+                                             Time = rawTransaction.Time,
                                          };
 
                 foreach (var output in transactionOutputs)

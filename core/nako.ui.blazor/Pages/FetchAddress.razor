@@ -1,0 +1,186 @@
+﻿@page "/fetchaddress/{addresshash}"
+@using System.Threading
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject GlobalData globalData
+
+
+@if (address == null)
+{
+    <section class="block-explorer-section section bg-bottom">
+        <div class="container">
+            <div class="row">
+                <div style="margin:0 auto; min-height: 500px">
+                    <div class="spinner-grow" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+}
+else
+{
+    <section class="block-explorer-section section bg-bottom">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="center-heading">
+                        <h2 class="section-title">Address Information</h2>
+                    </div>
+                </div>
+                <div class="offset-lg-3 col-lg-6">
+                    <div class="center-text">
+                        <p>Scroll to the bottom to fetch all UTXOs</p>
+                    </div>
+                </div>
+            </div>
+            <div class="row m-bottom-70">
+                <div class="col-lg-12">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-latests table-detail">
+                            <tbody>
+                                <tr><td><strong>Address</strong></td><td>@address.Address </td></tr>
+                                <tr><td><strong>Balance</strong></td><td>@GlobalData.ToUnit(address.Balance)  @address.CoinTag</td></tr>
+                                <tr><td><strong>UnconfirmedBalance</strong></td><td>@GlobalData.ToUnit(address.UnconfirmedBalance) @address.CoinTag</td></tr>
+                                <tr><td><strong>TotalReceived</strong></td><td>@GlobalData.ToUnit(address.TotalReceived ?? 0)  @address.CoinTag</td></tr>
+                                <tr><td><strong>TotalSent</strong></td><td>@GlobalData.ToUnit(address.TotalSent ?? 0)  @address.CoinTag</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="center-heading">
+                        <h2 class="section-title">Transaction Outputs</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-latests">
+                            <thead>
+                                <tr>
+                                    <th>Hash</th>
+                                    <th>Block</th>
+                                    @*<th>Type</th>*@
+                                    @*<th>Confirmations</th>*@
+                                    <th>Amount</th>
+                                    <th>spent-in</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var transaction in address.Transactions)
+                                {
+                                    <tr>
+                                        <td @onclick="@(() => NavigateToTransactionHash(transaction.TransactionHash))" class=" mousepointer">@transaction.TransactionHash</td>
+                                        <td @onclick="@(() => NavigateToBlockIndex(transaction.BlockIndex.Value))" class=" mousepointer">@transaction.BlockIndex @(transaction.CoinBase ? "mined" : transaction.CoinStake ? "minted" : string.Empty)</td>
+                                        @*<td>@(transaction.CoinBase ? "mined" : transaction.CoinStake ? "minted" : string.Empty)</td>*@
+                                        @*<td>@transaction.Confirmations</td>*@
+
+                                        @if (string.IsNullOrEmpty(transaction.SpendingTransactionHash))
+                                        {
+                                            <td class="text-success">@GlobalData.ToUnit(transaction.Value) @address.CoinTag</td>
+                                            <td class="text-success"></td>
+                                            <td class="text-success"></td>
+
+                                        }
+                                        else
+                                        {
+                                            <td class="text-danger">@GlobalData.ToUnit(transaction.Value) @address.CoinTag</td>
+                                            <td @onclick="@(() => NavigateToTransactionHash(transaction.SpendingTransactionHash))" class="mousepointer">@transaction.SpendingTransactionHash.Substring(0, 10) </td>
+                                            <td @onclick="@(() => NavigateToBlockIndex(transaction.SpendingBlockIndex ?? 0))" class="mousepointer">@transaction.SpendingBlockIndex</td>
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="center-heading">
+
+                        @if (this.fetching)
+                        {
+                            <button class="btn btn-light" type="button" disabled>
+                                <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>
+                                <span class="sr-only">Loading...</span>
+                            </button>
+                        }
+
+                        @*Assume that if maxitems equals count there is more to fetch.*@
+                        @if (this.maxitems != -1 && this.address.Transactions.Count() == this.maxitems)
+                        {
+                            <br />
+                            <button type="button" @onclick="FetchMoreAddresses" class="btn btn-light text-center">Fetch another 100</button>
+
+                            // Not to abuse the fetch all button
+                            @if (this.maxitems > 300)
+                            {
+                                <button type="button" @onclick="FetchAllAddresses" class="btn btn-light text-center">Fetch all</button>
+                            }
+
+                            <br />
+                        }
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+}
+
+@code {
+
+    [Parameter]
+    public string addresshash { get; set; }
+
+    private int maxitems { get; set; }
+
+    private bool fetching { get; set; }
+
+    private void NavigateToTransactionHash(string trxHash)
+    {
+        NavigationManager.NavigateTo($"FetchTransaction/{trxHash}");
+    }
+
+    private void NavigateToBlockIndex(long index)
+    {
+        NavigationManager.NavigateTo($"fetchblock/{index}");
+    }
+
+    DataTypes.QueryAddress address;
+
+    private async Task FetchMoreAddresses()
+    {
+        this.maxitems += 100;
+        fetching = true;
+
+        address = await Http.GetJsonAsync<DataTypes.QueryAddress>($"http://{this.globalData.ApiUrl}/api/Query/address/{this.addresshash}/confirmations/0/transactions/{this.maxitems}?api-version=1.0");
+
+        fetching = false;
+    }
+
+    private async Task FetchAllAddresses()
+    {
+        this.maxitems = -1;
+
+        fetching = true;
+
+        address = await Http.GetJsonAsync<DataTypes.QueryAddress>($"http://{this.globalData.ApiUrl}/api/Query/address/{this.addresshash}/confirmations/0/transactions?api-version=1.0");
+
+        fetching = false;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        this.maxitems = 10;
+
+        address = await Http.GetJsonAsync<DataTypes.QueryAddress>($"http://{this.globalData.ApiUrl}/api/Query/address/{this.addresshash}/confirmations/0/transactions/{this.maxitems}?api-version=1.0");
+    }
+}

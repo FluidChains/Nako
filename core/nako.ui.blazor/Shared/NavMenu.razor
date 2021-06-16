@@ -1,0 +1,60 @@
+﻿
+                <nav class="main-nav">
+                    <!-- ***** Logo Start ***** -->
+                    @*<a href="index-2.html" class="logo">
+                        <img src="assets/images/logos/transparent-logo-blue.svg" class="light-logo" alt="Arda ICO" />
+                        <img src="assets/images/logos/white-logo-blue.svg" class="dark-logo" alt="Arda ICO" />
+                    </a>*@
+                    <!-- ***** Logo End ***** -->
+                    <!-- ***** Menu Start ***** -->
+                    <ul class="nav">
+                        <li>
+                            <NavLink class="menu-trigger-item" href="" Match="NavLinkMatch.All">
+                                Home
+                            </NavLink>
+                        </li>
+                        <li>
+                            <NavLink class="menu-trigger-item" href="fetchblock">
+                               Last block
+                            </NavLink>
+                        </li>
+                        <li>
+                            <NavLink class="menu-trigger-item" href="fetchblocks">
+                                Recent Blocks
+                            </NavLink>
+                        </li>
+                        <li>
+                            <NavLink class="menu-trigger-item" href="fetchpeers">
+                               Peers
+                            </NavLink>
+                        </li>
+                        <li>
+                            <NavLink class="menu-trigger-item" href="fetchdeployments">
+                                Deployments
+                            </NavLink>
+                        </li>
+                        <li>
+                            <NavLink class="menu-trigger-item" href="fetchmempool">
+                               Mempool
+                            </NavLink>
+                        </li>
+                    </ul>
+                    <a class="menu-trigger">
+                        <span class="navinner">Menu</span>
+                    </a>
+                    <!-- ***** Menu End ***** -->
+                </nav>
+
+
+<!-- ***** Header Area End ***** -->
+
+@code {
+    //bool collapseNavMenu = true;
+
+    //string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    //void ToggleNavMenu()
+    //{
+    //    collapseNavMenu = !collapseNavMenu;
+    //}
+}

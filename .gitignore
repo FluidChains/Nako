@@ -164,3 +164,7 @@ Source/Cloud/
 Source/Databases/
 /Source/Rosetta.Cloud/Configuration
 /core/.vs/Nako.Core/v15/Server/sqlite3
+/.vs/ProjectSettings.json
+/.vs/slnx.sqlite
+/.vs/config/applicationhost.config
+/.vs/VSWorkspaceState.json

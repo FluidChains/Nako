@@ -23,7 +23,7 @@ namespace Nako
     {
         public static void Main(string[] args)
         {
-            var chain = (args.Length == 0) ? "STRAT" : args[0].ToUpper();
+            var chain = (args.Length == 0) ? "EXOS" : args[0].ToUpper();
             chain = (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("CHAIN"))) ? chain : Environment.GetEnvironmentVariable("CHAIN").ToUpper();
 
             var config = new ConfigurationBuilder()

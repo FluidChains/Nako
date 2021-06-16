@@ -11,27 +11,17 @@ namespace Nako.Storage.Mongo.Types
 {
     public class MapBlock
     {
-        public string Hash { get; set; }
+        #region Public Properties
 
-        public long Confirmations { get; set; }
+        public string BlockHash { get; set; }
 
-        public long Size { get; set; }
+        public long BlockIndex { get; set; }
 
-        public long Height { get; set; }
+        public long BlockSize { get; set; }
 
-        public long Version { get; set; }
+        public long BlockTime { get; set; }
 
-        public string Merkleroot { get; set; }
-
-        public string Mint { get; set; }
-
-        public long Time { get; set; }
-
-        public long Nonce { get; set; }
-
-        public string Bits { get; set; }
-
-        public decimal Difficulty { get; set; }
+        public string NextBlockHash { get; set; }
 
         public string PreviousBlockHash { get; set; }
 

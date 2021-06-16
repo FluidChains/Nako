@@ -42,8 +42,6 @@ namespace Nako.Storage.Mongo
 
         private readonly MongoData data;
 
-        private readonly SyncConnection syncConnection;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="MongoStorageOperations"/> class.
         /// </summary>
@@ -54,7 +52,6 @@ namespace Nako.Storage.Mongo
             this.log = logger;
             this.syncConnection = syncConnection;
             this.storage = storage;
-            this.syncConnection = syncConnection;
         }
 
         public void ValidateBlock(SyncBlockTransactionsOperation item)
@@ -65,7 +62,7 @@ namespace Nako.Storage.Mongo
 
                 if (lastBlock != null)
                 {
-                    if (lastBlock.Hash == item.BlockInfo.Hash)
+                    if (lastBlock.BlockHash == item.BlockInfo.Hash)
                     {
                         if (lastBlock.SyncComplete)
                         {
@@ -74,7 +71,7 @@ namespace Nako.Storage.Mongo
                     }
                     else
                     {
-                        if (item.BlockInfo.PreviousBlockHash != lastBlock.Hash)
+                        if (item.BlockInfo.PreviousBlockHash != lastBlock.BlockHash)
                         {
                             this.InvalidBlockFound(lastBlock, item);
                             return;
@@ -104,22 +101,17 @@ namespace Nako.Storage.Mongo
             {
                 // remove all transactions from the memory pool
                 item.Transactions.ForEach(t =>
-                    {
-                        NBitcoin.Transaction outer;
-                        this.data.MemoryTransactions.TryRemove(t.GetHash().ToString(), out outer);
-                    });
+                {
+                    NBitcoin.Transaction outer;
+                    this.data.MemoryTransactions.TryRemove(t.GetHash().ToString(), out outer);
+                });
 
                 // break the work in to batches of transactions
                 var queue = new Queue<NBitcoin.Transaction>(item.Transactions);
                 do
                 {
-                    var transactions = this.GetBatch(this.configuration.MongoBatchSize, queue).ToList();
-                    var bitcoinClient = CryptoClientFactory.Create(
-                                        syncConnection.ServerDomain,
-                                        syncConnection.RpcAccessPort,
-                                        syncConnection.User,
-                                        syncConnection.Password,
-                                        syncConnection.Secure);
+                    var items = this.GetBatch(this.configuration.MongoBatchSize, queue).ToList();
+
                     try
                     {
                         if (item.BlockInfo != null)
@@ -127,7 +119,6 @@ namespace Nako.Storage.Mongo
                             var inserts = items.Select(s => new MapTransactionBlock { BlockIndex = item.BlockInfo.Height, TransactionId = s.GetHash().ToString() }).ToList();
                             stats.Transactions += inserts.Count;
                             this.data.MapTransactionBlock.InsertMany(inserts, new InsertManyOptions { IsOrdered = false });
-                            this.data.MapTransactionDetails.InsertMany(insertDetails, new InsertManyOptions { IsOrdered = false });
                         }
                     }
                     catch (MongoBulkWriteException mbwex)
@@ -154,7 +145,7 @@ namespace Nako.Storage.Mongo
 
                             foreach (var mapTransactionAddress in itemsInner)
                             {
-                                if(mapTransactionAddress.SpendingTransactionId == null)
+                                if (mapTransactionAddress.SpendingTransactionId == null)
                                 {
                                     ops.Add(mapTransactionAddress.Id, new InsertOneModel<MapTransactionAddress>(mapTransactionAddress));
                                 }
@@ -243,7 +234,7 @@ namespace Nako.Storage.Mongo
 
             return stats;
         }
-        
+
 
         private void CompleteBlock(BlockInfo block)
         {
@@ -254,13 +245,13 @@ namespace Nako.Storage.Mongo
         {
             var blockInfo = new MapBlock
             {
-                BlockIndex = block.Height, 
-                BlockHash = block.Hash, 
-                BlockSize = block.Size, 
-                BlockTime = block.Time, 
-                NextBlockHash = block.NextBlockHash, 
-                PreviousBlockHash = block.PreviousBlockHash, 
-                TransactionCount = block.Transactions.Count(), 
+                BlockIndex = block.Height,
+                BlockHash = block.Hash,
+                BlockSize = block.Size,
+                BlockTime = block.Time,
+                NextBlockHash = block.NextBlockHash,
+                PreviousBlockHash = block.PreviousBlockHash,
+                TransactionCount = block.Transactions.Count(),
                 Bits = block.Bits,
                 Confirmations = block.Confirmations,
                 Merkleroot = block.Merkleroot,
@@ -333,7 +324,7 @@ namespace Nako.Storage.Mongo
 
                     var address = ScriptToAddressParser.GetAddress(this.syncConnection.Network, output.ScriptPubKey);
 
-                    if(address == null)
+                    if (address == null)
                         continue;
 
                     yield return new MapTransactionAddress
@@ -342,7 +333,7 @@ namespace Nako.Storage.Mongo
                         TransactionId = id,
                         Value = output.Value,
                         Index = index,
-                        Addresses = address.ToList(), 
+                        Addresses = address.ToList(),
                         ScriptHex = output.ScriptPubKey.ToHex(),
                         BlockIndex = blockIndex,
                         CoinBase = rawTransaction.IsCoinBase,
@@ -356,7 +347,7 @@ namespace Nako.Storage.Mongo
         {
             foreach (var transaction in transactions)
             {
-                if(transaction.IsCoinBase)
+                if (transaction.IsCoinBase)
                     continue;
 
                 foreach (var input in transaction.Inputs)

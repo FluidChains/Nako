@@ -46,7 +46,7 @@ namespace Nako.Storage.Mongo
             this.syncConnection = connection;
             this.log = logger;
             this.configuration = nakoConfiguration.Value;
-            this.mongoClient = new MongoClient(this.configuration.ConnectionStringActual);
+            this.mongoClient = new MongoClient(this.configuration.ConnectionString);
             var dbName = this.configuration.DatabaseNameSubfix ? "Blockchain" + this.configuration.CoinTag : "Blockchain";
             this.mongoDatabase = this.mongoClient.GetDatabase(dbName);
             this.MemoryTransactions = new ConcurrentDictionary<string, NBitcoin.Transaction>();
@@ -96,8 +96,8 @@ namespace Nako.Storage.Mongo
 
         public IEnumerable<SyncBlockInfo> BlockGetBlockCount(int count)
         {
-            var filter = Builders<MapBlock>.Filter.Exists(info => info.Height);
-            var sort = Builders<MapBlock>.Sort.Descending(info => info.Height);
+            var filter = Builders<MapBlock>.Filter.Exists(info => info.BlockHash);
+            var sort = Builders<MapBlock>.Sort.Descending(info => info.BlockIndex);
 
             return this.MapBlock.Find(filter).Sort(sort).Limit(count).ToList().Select(this.Convert);
         }
@@ -110,14 +110,14 @@ namespace Nako.Storage.Mongo
 
         public SyncBlockInfo BlockGetByIndex(long blockIndex)
         {
-            var filter = Builders<MapBlock>.Filter.Eq(info => info.Height, blockIndex);
+            var filter = Builders<MapBlock>.Filter.Eq(info => info.BlockIndex, blockIndex);
 
             return this.MapBlock.Find(filter).ToList().Select(this.Convert).FirstOrDefault();
         }
 
         public SyncBlockInfo BlockGetByHash(string blockHash)
         {
-            var filter = Builders<MapBlock>.Filter.Eq(info => info.Hash, blockHash);
+            var filter = Builders<MapBlock>.Filter.Eq(info => info.BlockHash, blockHash);
 
             return this.MapBlock.Find(filter).ToList().Select(this.Convert).FirstOrDefault();
         }
@@ -141,7 +141,7 @@ namespace Nako.Storage.Mongo
 
         public void CompleteBlock(string blockHash)
         {
-            var filter = Builders<MapBlock>.Filter.Eq(blockInfo => blockInfo.Hash, blockHash);
+            var filter = Builders<MapBlock>.Filter.Eq(blockInfo => blockInfo.BlockHash, blockHash);
             var update = Builders<MapBlock>.Update.Set(blockInfo => blockInfo.SyncComplete, true);
             this.MapBlock.UpdateOne(filter, update);
         }
@@ -180,10 +180,10 @@ namespace Nako.Storage.Mongo
             return new SyncTransactionInfo
             {
                 BlockIndex = trx.BlockIndex,
-                BlockHash = blk.Hash,
-                Timestamp = blk.Time,
+                BlockHash = blk.BlockHash,
+                Timestamp = blk.BlockTime,
                 TransactionHash = trx.TransactionId,
-                Confirmations = current.Height - trx.BlockIndex
+                Confirmations = current.BlockIndex - trx.BlockIndex
             };
         }
 
@@ -192,16 +192,16 @@ namespace Nako.Storage.Mongo
             var blk = this.BlockGetByHash(blockHash);
             var current = this.BlockGetBlockCount(1).First();
 
-            var filter = Builders<MapTransactionBlock>.Filter.Eq(info => info.BlockIndex, blk.Height);
+            var filter = Builders<MapTransactionBlock>.Filter.Eq(info => info.BlockIndex, blk.BlockIndex);
             var trxs = this.MapTransactionBlock.Find(filter).ToList();
 
             return trxs.Select(s => new SyncTransactionInfo
             {
                 BlockIndex = s.BlockIndex,
-                BlockHash = blk.Hash,
-                Timestamp = blk.Time,
+                BlockHash = blk.BlockHash,
+                Timestamp = blk.BlockTime,
                 TransactionHash = s.TransactionId,
-                Confirmations = current.Height - s.BlockIndex
+                Confirmations = current.BlockIndex - s.BlockIndex
             });
         }
 
@@ -210,16 +210,16 @@ namespace Nako.Storage.Mongo
             var blk = this.BlockGetByIndex(blockIndex);
             var current = this.BlockGetBlockCount(1).First();
 
-            var filter = Builders<MapTransactionBlock>.Filter.Eq(info => info.BlockIndex, blk.Height);
+            var filter = Builders<MapTransactionBlock>.Filter.Eq(info => info.BlockIndex, blk.BlockIndex);
             var trxs = this.MapTransactionBlock.Find(filter).ToList();
 
             return trxs.Select(s => new SyncTransactionInfo
             {
                 BlockIndex = s.BlockIndex,
-                BlockHash = blk.Hash,
-                Timestamp = blk.Time,
+                BlockHash = blk.BlockHash,
+                Timestamp = blk.BlockTime,
                 TransactionHash = s.TransactionId,
-                Confirmations = current.Height - s.BlockIndex
+                Confirmations = current.BlockIndex - s.BlockIndex
             });
         }
 
@@ -312,15 +312,15 @@ namespace Nako.Storage.Mongo
             var block = this.BlockGetByHash(blockHash);
 
             // delete the outputs
-            var addrFilter = Builders<MapTransactionAddress>.Filter.Eq(addr => addr.BlockIndex, block.Height);
+            var addrFilter = Builders<MapTransactionAddress>.Filter.Eq(addr => addr.BlockIndex, block.BlockIndex);
             this.MapTransactionAddress.DeleteMany(addrFilter);
 
             // delete the transaction
-            var transactionFilter = Builders<MapTransactionBlock>.Filter.Eq(info => info.BlockIndex, block.Height);
+            var transactionFilter = Builders<MapTransactionBlock>.Filter.Eq(info => info.BlockIndex, block.BlockIndex);
             this.MapTransactionBlock.DeleteMany(transactionFilter);
 
             // delete the block itself.
-            var blockFilter = Builders<MapBlock>.Filter.Eq(info => info.Hash, blockHash);
+            var blockFilter = Builders<MapBlock>.Filter.Eq(info => info.BlockHash, blockHash);
             this.MapBlock.DeleteOne(blockFilter);
         }
 

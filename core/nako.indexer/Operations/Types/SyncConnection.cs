@@ -98,7 +98,7 @@ namespace Nako.Operations.Types
             this.CoinTag = configuration.CoinTag;
             this.Password = configuration.RpcPassword;
             this.RpcAccessPort = configuration.RpcAccessPort;
-            this.ServerDomain = configuration.RpcDomainActual;
+            this.ServerDomain = configuration.RpcDomain;
             this.User = configuration.RpcUser;
             this.Secure = configuration.RpcSecure;
             this.StartBlockIndex = configuration.StartBlockIndex;

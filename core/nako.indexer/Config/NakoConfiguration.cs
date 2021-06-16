@@ -67,22 +67,5 @@ namespace Nako.Config
 
         public string CoinInformation { get; set; }
 
-        [JsonIgnore]
-        public string ConnectionStringActual
-        {
-            get
-            {
-                return ConnectionString.Replace("{CoinTag}", CoinTag.ToLower());
-            }
-        }
-
-        [JsonIgnore]
-        public string RpcDomainActual
-        {
-            get
-            {
-                return RpcDomain.Replace("{CoinTag}", CoinTag.ToLower());
-            }
-        }
     }
 }

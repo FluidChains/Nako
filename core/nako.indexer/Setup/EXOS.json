@@ -1,0 +1,12 @@
+{
+  "CoinTag": "EXOS",
+  "NetworkConsensusFactoryType": "NBitcoin.PosConsensusFactory, NBitcoin",
+  "NetworkPubkeyAddressPrefix": 28,
+  "NetworkScriptAddressPrefix": 88,
+  "NetworkWitnessPrefix": "exos",
+
+  "LogoUrl": "",
+  "CoinName": "ExO Economy",
+  "CoinInformation": "The Global Transformation Economy"
+
+}

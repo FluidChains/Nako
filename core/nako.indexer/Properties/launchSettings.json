@@ -32,6 +32,15 @@
       },
       "applicationUrl": "http://localhost:9000/"
     },
+    "Nako.Core (EXOS)": {
+      "commandName": "Project",
+      "commandLineArgs": "EXOS",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "http://localhost:9000/"
+    },
     "Nako.Core (CITY)": {
       "commandName": "Project",
       "commandLineArgs": "CITY",
@@ -59,6 +68,7 @@
       },
       "applicationUrl": "http://localhost:9000/"
     },
+
     "Nako.Core (TSTRAT)": {
       "commandName": "Project",
       "commandLineArgs": "TSTRAT",
